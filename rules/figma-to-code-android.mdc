@@ -1,0 +1,59 @@
+---
+description: 
+alwaysApply: true
+---
+
+# Figma To Code (Android / Compose)
+
+适用于 Android Compose 页面从 Figma 设计稿转代码的实现过程。
+
+## 1) 顶部状态栏不作为真实业务 UI
+
+- 设计图顶部的系统状态栏（时间、信号、电量、刘海安全区示意）仅作为设备外壳信息。
+- 禁止将状态栏元素拆成业务组件写入页面内容层。
+- 页面布局从真实业务内容区开始，按设计稿内容区结构实现。
+- 如需处理系统栏占位，使用标准系统 Insets/Scaffold 能力处理，不手工绘制“假状态栏”。
+
+## 2) 已切图素材必须下载并按规范重命名后入库
+
+- 对设计稿中已切图的图片资源，必须先下载到本地再入项目。
+- 下载优先级：优先下载 PNG 并入项目；如果没有可下载的 PNG 但有 SVG，则正常下载 SVG 作为兜底资产。
+- 命名不符合 Android 资源规范时，必须先重命名后再提交代码。
+- 图片文件名规则：
+  - 仅使用小写字母、数字、下划线。
+  - 以字母开头。
+  - 禁止空格、中文、连字符、大小写混用及特殊符号。
+- 默认放置到 `app/src/main/res/mipmap-*` 对应密度目录（`mipmap-mdpi` / `mipmap-xhdpi` / `mipmap-xxhdpi` / `mipmap-xxxhdpi`）。
+
+## 3) 矢量图处理：Android 侧优先使用 VectorDrawable
+
+- 对图标、勾选、线性装饰、简单形状等矢量素材，优先在 Android 侧使用 `VectorDrawable`（通常优于位图切图）。
+- 当 PNG 不可得且 MCP/Figma 资产返回为 SVG 时：
+  - 正常下载 SVG，并优先转换落库到 `app/src/main/res/drawable/*.xml`（VectorDrawable）。
+  - Compose 中优先通过 `painterResource(R.drawable.xxx)` 使用，不额外降级为多套密度 PNG。
+- 仅在以下情况使用位图切图（`mipmap-*`）：
+  - 渐变/阴影/模糊等矢量转换后明显失真；
+  - 复杂插画或大背景在 VectorDrawable 下性能或体积不理想；
+  - 设计明确要求按位图效果交付。
+- 资源命名同样遵循 Android 规范：小写字母、数字、下划线，且以字母开头。
+
+## 4) 生成代码后必须提供整页预览方法
+
+- 每个新建或修改的 Compose 页面，在生成代码后必须补充“预览整个页面”的 `@Preview` 方法。
+- 预览方法应放在页面文件末尾，命名清晰（如 `WwmcScreenPreview` / `XxxPagePreview`）。
+- 预览需包裹项目主题（如 `FigmadomeTheme`），并直接渲染页面入口 Composable，确保可一键查看整页结构与样式。
+- 如页面依赖 `ViewModel`/导航/参数，预览中需提供最小可运行的占位参数或 Preview 专用状态，避免预览报错。
+
+## 命名示例
+
+- `Banner@2x.png` -> `home_banner.png`
+- `icon-User Profile.PNG` -> `ic_user_profile.png`
+- `登录按钮.png` -> `btn_login.png`
+
+## 交付前自检
+
+- 页面代码未包含状态栏内容（时间/信号/电量）组件化实现。
+- 新增切图资源已按“优先 PNG、无 PNG 则 SVG”完成下载并按规范重命名。
+- 资源已按密度放入正确的 `mipmap-*` 目录。
+- 矢量素材已优先采用 `VectorDrawable`（如不采用，已有明确原因说明）。
+- 已提供可运行的整页 `@Preview` 方法（主题包裹 + 页面入口可渲染）。
